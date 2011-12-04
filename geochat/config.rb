@@ -1,3 +1,5 @@
+require 'logger'
+
 module GeoChat
   module Config
     class << self
@@ -13,6 +15,9 @@ module GeoChat
       end
     end
 
-    mattr_accessor :host, :port
+    mattr_accessor :host, :port, :logger
+    def self.logger
+      @@logger ||= Logger.new(STDOUT)
+    end
   end
 end
