@@ -41,6 +41,10 @@ module GeoChat
       logger.info("Reactor started!")
       logger.info("Started GeoChat on host %s and port %d" % [GeoChat::Config.host, GeoChat::Config.port])
 
+      EventMachine.add_periodic_timer(1) do
+        logger.debug("Tick! #{Time.now}")
+      end
+
       @connected_clients = ClientCollection.new
 
       EventMachine::WebSocket.start(host: GeoChat::Config.host, port: GeoChat::Config.port) do |ws|
