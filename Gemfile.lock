@@ -6,9 +6,13 @@ GEM
       addressable (>= 2.1.1)
       eventmachine (>= 0.12.9)
     eventmachine (1.0.0.beta.4)
+    geokit (1.6.0)
+    json_pure (1.6.3)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   em-websocket
+  geokit
+  json_pure

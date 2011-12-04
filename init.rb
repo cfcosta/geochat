@@ -4,6 +4,8 @@ require 'optparse'
 require 'config'
 require 'geochat'
 
+GeoKit.default_units = :kms
+
 GeoChat::Config.configure do |c|
   c.host = '0.0.0.0'
   c.port = 9292
