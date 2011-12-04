@@ -6,7 +6,12 @@ require 'geokit'
 class ClientCollection < Array
   def distance_list(options)
     result = reject { |x| x.signature == options[:signature] }
-    result.map { |x| {nickname: x.nickname, distance: x.location.distance_to(options[:location])} }
+    result.map do |client|
+      next unless client.location
+
+      {nickname: client.nickname,
+       distance: client.location.distance_to(options[:location])}
+    end.compact
   end
 
   def delete(connection)
@@ -40,14 +45,24 @@ module GeoChat
 
       EventMachine::WebSocket.start(host: GeoChat::Config.host, port: GeoChat::Config.port) do |ws|
         ws.onopen do
-          @connected_clients << Client.new(ws)
+          client = Client.new(ws)
+          @connected_clients << client
+
           logger.debug("New connection initiated.")
           logger.debug("Connected clients: #{@connected_clients.map(&:nickname)}")
+
+          @connected_clients.reject { |x| x.signature == client.signature }.each do |client|
+            client.connection.send({method: 'connect', data: {nickname: client.nickname}}.to_json)
+          end
         end
 
         ws.onclose do
+          client = @connected_clients.find_by_signature(ws.signature)
+
           @connected_clients.delete(ws)
-          @connected_clients.each { |client| client.connection.send "A client has disconnected!" }
+          @connected_clients.each do |client|
+            client.connection.send({method: 'disconnect', data: {nickname: client.nickname}}.to_json)
+          end
           logger.debug("Connection closed...")
           logger.debug("Connected clients: #{@connected_clients.map(&:nickname)}")
         end
@@ -60,15 +75,24 @@ module GeoChat
           case message['method']
           when 'nickname'
             logger.debug("Changing %s nickname to %s" % [client.nickname.inspect, message['data']['nickname']])
+
+            @connected_clients.reject { |x| x.signature == client.signature }.each do |client|
+              client.connection.send({method: 'nickname_change', data: {before: client.nickname, nickname: message['data']['nickname']}}.to_json)
+            end
+
             client.nickname = message['data']['nickname']
           when 'location'
             logger.debug("Changing %s location to %s" % [client.nickname.inspect, message['data']['location']])
             location = message['data']['location']
             client.location = GeoKit::GeoLoc.new(lat: location[0], lng: location[1])
+
+            @connected_clients.reject { |x| x.signature == client.signature }.each do |c|
+              c.connection.send({method: 'location_change', data: {nickname: client.nickname, distance: c.location.distance_to(client.location) }}.to_json)
+            end
           when 'client_list'
             logger.debug("Sending client list to %s" % client.nickname.inspect)
-            distances = @connected_clients.distance_list(location: client.location, signature: client.signature)
-            ws.send(distances.to_json)
+            users = @connected_clients.distance_list(location: client.location, signature: client.signature)
+            ws.send({method: 'client_list', data: {users: users}}.to_json)
           end
         end
       end
