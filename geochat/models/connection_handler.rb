@@ -30,7 +30,7 @@ class ConnectionHandler
     client.location = GeoKit::GeoLoc.new(lat: location[0], lng: location[1])
 
     send_to_all_but_self({method: 'connect', data: client.to_hash}, client)
-    client.connection.send({method: 'client_list',
+    client.connection.send({method: 'contact-list',
                             data:
                               {clients: clients.distance_list(location: client.location, signature: client.signature)}
                            }.to_json)
