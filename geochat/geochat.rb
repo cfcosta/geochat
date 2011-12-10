@@ -24,8 +24,8 @@ module GeoChat
           logger.debug("New connection initiated.")
           logger.debug("Connected clients: #{@connected_clients.map(&:nickname)}")
 
-          @connected_clients.reject { |x| x.signature == client.signature }.each do |client|
-            client.connection.send({method: 'connect', data: {nickname: client.nickname}}.to_json)
+          @connected_clients.reject { |x| x.signature == client.signature }.each do |c|
+            c.connection.send({method: 'connect', data: {nickname: client.nickname}}.to_json)
           end
         end
 
@@ -33,8 +33,8 @@ module GeoChat
           client = @connected_clients.find_by_signature(ws.signature)
 
           @connected_clients.delete(ws)
-          @connected_clients.each do |client|
-            client.connection.send({method: 'disconnect', data: {nickname: client.nickname}}.to_json)
+          @connected_clients.each do |c|
+            c.connection.send({method: 'disconnect', data: {nickname: client.nickname}}.to_json)
           end
           logger.debug("Connection closed...")
           logger.debug("Connected clients: #{@connected_clients.map(&:nickname)}")
@@ -49,8 +49,8 @@ module GeoChat
           when 'nickname'
             logger.debug("Changing %s nickname to %s" % [client.nickname.inspect, message['data']['nickname']])
 
-            @connected_clients.reject { |x| x.signature == client.signature }.each do |client|
-              client.connection.send({method: 'nickname_change', data: {before: client.nickname, nickname: message['data']['nickname']}}.to_json)
+            @connected_clients.reject { |x| x.signature == client.signature }.each do |c|
+              c.connection.send({method: 'nickname_change', data: {before: client.nickname, nickname: message['data']['nickname']}}.to_json)
             end
 
             client.nickname = message['data']['nickname']
