@@ -4,13 +4,20 @@ class ClientCollection < Array
     result.map do |client|
       next unless client.location
 
-      {nickname: client.nickname,
-       distance: client.location.distance_to(options[:location])}
+      {
+        id: client.id,
+        nickname: client.name,
+        distance: client.location.distance_to(options[:location]),
+        link: client.link,
+        picture: client.picture}
     end.compact
   end
 
   def delete(connection)
-    super(find_by_signature(connection.signature))
+    client = find_by_signature(connection.signature)
+    super(client)
+
+    client
   end
 
   def method_missing(method, *args, &block)
