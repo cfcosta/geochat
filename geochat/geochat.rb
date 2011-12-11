@@ -30,6 +30,8 @@ module GeoChat
           case message['method']
           when 'ready'
             @handler.ready(ws, message)
+          when 'private-message'
+            @handler.private_message(ws, message['data']['to'], message['data']['text'])
           end
         end
       end

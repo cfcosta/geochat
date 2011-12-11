@@ -29,11 +29,34 @@ class ConnectionHandler
     location = message['data']['location']
     client.location = GeoKit::GeoLoc.new(lat: location[0], lng: location[1])
 
-    send_to_all_but_self({method: 'connect', data: client.to_hash}, client)
-    client.connection.send({method: 'contact-list',
-                            data:
-                              {clients: clients.distance_list(location: client.location, signature: client.signature)}
-                           }.to_json)
+    clients.reject { |cl| cl.signature == client.signature }.each do |cl|
+      message = {method: 'connect', data: client.to_hash_with_distance(cl.location) }
+      cl.connection.send(message.to_json)
+    end
+
+    client.connection.send({
+            method: 'contact-list',
+            data: {
+              clients: clients.distance_list(location: client.location, signature: client.signature)
+            }
+          }.to_json)
+  end
+
+  def private_message(from, to, message)
+    from = clients.find_by_signature(from.signature)
+    to = clients.find_by_id(to.to_s)
+
+    to.connection.send({
+        method: 'private-message',
+        data: {
+          from: from.id,
+          from_name: from.name,
+          to: to.id,
+          to_name: to.name,
+          time: Time.now.strftime("%T"),
+          message: message
+        }
+      }.to_json)
   end
 
   private
