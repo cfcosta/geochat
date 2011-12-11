@@ -13,7 +13,7 @@ class Client < Struct.new(:connection, :id, :name, :location, :link, :picture)
     {
       id: id,
       nickname: name,
-      distance: original_loc.distance_to(location),
+      distance: "%.2f" % (original_loc.distance_to(location)),
       link: link,
       picture: picture
     }
